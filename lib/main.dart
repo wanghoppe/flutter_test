@@ -43,9 +43,11 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
       begin: const Offset(0.5, 0),
       end: Offset.zero
   );
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey<SliverAnimatedListState>();
   ListModel<int> _list;
   int _nextItem; // The next item inserted when the user presses the '+' button.
+
+  final aicontianer = ActivityIndicatorContainter();
 
   @override
   void initState() {
@@ -82,15 +84,19 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
       );
       return SlideTransition(
         position: animation.drive(activityTween),
-        child: ActivityIndicatorContainter()
+        child: aicontianer
       );
     }
 
-    return SlideTransition(
-      position: animation.drive(myTween),
-      child: FadeTransition(
-          opacity: animation,
-          child: _list[index]
+    return SizeTransition( // Todo: change
+      sizeFactor: animation,
+      axisAlignment: -1.0,
+      child: SlideTransition(
+        position: animation.drive(myTween),
+        child: FadeTransition(
+            opacity: animation,
+            child: _list[index]
+        ),
       ),
     );
   }
@@ -117,14 +123,37 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: AnimatedList(
-            key: _listKey,
-            initialItemCount: _list.length + 1,
-            itemBuilder: _buildItem,
+          child: CustomScrollView(
+            slivers: [
+              SliverAnimatedList(
+                key: _listKey,
+                initialItemCount: _list.length, // Todo: change
+                itemBuilder: _buildItem,
+              ),
+              MyOtherSliverList()
+            ],
           ),
         ),
       );
   }
+}
+
+class MyOtherSliverList extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    print('Build sencond SliverList');
+    return SliverList(
+      delegate: SliverChildListDelegate(  // Todo: change
+          [ActivityIndicatorContainter()]
+//          [AnimatedContainer(
+//            height: 200,
+//            color: Colors.green,
+//            duration: Duration(seconds: 1))
+//          ]
+      ),
+    );
+  }
+
 }
 
 class MyActivityIndicator extends StatelessWidget{
@@ -132,7 +161,8 @@ class MyActivityIndicator extends StatelessWidget{
   Widget build(BuildContext context) {
     print('Building Activity Indictors');
     final loadModel = Provider.of<LoadModel>(context);
-    return loadModel.finished? Container(): const CupertinoActivityIndicator(radius: 15);
+//    return loadModel.finished? Container(): const CupertinoActivityIndicator(radius: 15);
+    return Visibility(visible: !loadModel.finished ,child: CupertinoActivityIndicator(radius: 15));
   }
 
 }
@@ -142,14 +172,21 @@ class ActivityIndicatorContainter extends StatelessWidget{
   Widget build(BuildContext context) {
     print('Building Activity Container');
     final loadModel = Provider.of<LoadModel>(context);
-    if (loadModel.finished) {
-      return Container();
-    } else {
-      return Container(
+//    if (loadModel.finished) {
+//      return Container();
+//    } else {
+//      return Container(
+//        height: 128,
+//        child: const Center(child: CupertinoActivityIndicator(radius: 15))
+//      );
+//    }
+    return Visibility(
+      visible: !loadModel.finished,
+      child: Container(
         height: 128,
         child: const Center(child: CupertinoActivityIndicator(radius: 15))
-      );
-    }
+      )
+    );
   }
 }
 
@@ -169,19 +206,19 @@ class ListModel<E> {
   }) : assert(listKey != null),
         _items = initialItems.map((it) => CardItem(item: it)).toList();
 
-  final GlobalKey<AnimatedListState> listKey;
+  final GlobalKey<SliverAnimatedListState> listKey;
   final List<CardItem> _items;
 
-  AnimatedListState get _animatedList => listKey.currentState;
+  SliverAnimatedListState get _animatedList => listKey.currentState;
 
   void insert(int item) {
     _items.add(CardItem(item: item));
 //    print('!!${_items.length-1}');
-    _animatedList.removeItem(_items.length-1,(context, _, {duration: const Duration(seconds: 0)}) => Container());
+//    _animatedList.removeItem(_items.length-1,(context, _, {duration: const Duration(seconds: 0)}) => Container());
     _animatedList.insertItem(_items.length-1, duration:const Duration(milliseconds: 500));
 //    print('!!!!!${_items.length-1}');
 //    _animatedList.removeItem(_items.length,(context, _, {duration: const Duration(seconds: 0)}) => Container());
-    _animatedList.insertItem(_items.length, duration:const Duration(milliseconds: 500));
+//    _animatedList.insertItem(_items.length, duration:const Duration(milliseconds: 400));
   }
 
   int get length => _items.length;
