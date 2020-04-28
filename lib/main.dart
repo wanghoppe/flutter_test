@@ -1,111 +1,234 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterapp/stream1.dart';
+import 'package:provider/provider.dart';
 
-void main() => runApp(MyApp());
+import 'models.dart';
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+// ...
+
+class MyHome extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+        home: ChangeNotifierProvider<LoadModel>(
+            create: (context) => LoadModel(),
+            child: MiddleWrap()
+        )
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class MiddleWrap extends StatelessWidget{
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    final loadModel = Provider.of<LoadModel>(context, listen: false);
+    return AnimatedListSample(loadModel: loadModel);
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+class AnimatedListSample extends StatefulWidget {
+
+  final loadModel;
+  AnimatedListSample({@required this.loadModel});
+
+  @override
+  _AnimatedListSampleState createState() => _AnimatedListSampleState();
+}
+
+class _AnimatedListSampleState extends State<AnimatedListSample> {
+  final myTween = Tween<Offset>(
+      begin: const Offset(1.5, 0),
+      end: Offset.zero);
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  ListModel<int> _list;
+  int _nextItem; // The next item inserted when the user presses the '+' button.
+
+  @override
+  void initState() {
+    super.initState();
+    _list = ListModel<int>(
+      listKey: _listKey,
+      initialItems: <int>[0],
+    );
+    _nextItem = 1;
+    _consume();
+  }
+  void _insert() {
+    final int index =_list.length;
+//    _list.insert(index, _nextItem++);
+  }
+
+  void _consume(){
+    widget.loadModel.start();
+    final mystream = StringCreator().stream;
+    mystream.listen((data){
+      _list.insert(int.parse(data));
+      },
+      onDone: () => widget.loadModel.finish()
+    );
+  }
+
+  // Used to build list items that haven't been removed.
+  Widget _buildItem(BuildContext context, int index, Animation<double> animation) {
+
+    final newAnimation = animation.drive(
+        CurveTween(curve: Curves.elasticOut)
+    );
+//    return SlideTransition(
+//      position: newAnimation.drive(myTween),
+//      child: _list[index]
+//    );
+    return FadeTransition(
+        opacity: animation,
+        child: _list[index]
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    print('Building everything');
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+        appBar: AppBar(
+          title: const Text('AnimatedList'),
+          actions: <Widget>[
+            MyActivityIndicator(),
+            IconButton(
+              icon: const Icon(Icons.add_circle),
+              onPressed: _insert,
+              tooltip: 'insert a new item',
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
+            IconButton(
+              icon: const Icon(Icons.update),
+              onPressed: _consume,
+              tooltip: 'start the stream',
             ),
           ],
         ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: AnimatedList(
+            key: _listKey,
+            initialItemCount: _list.length,
+            itemBuilder: _buildItem,
+          ),
+        ),
+      );
+  }
+}
+
+class MyActivityIndicator extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    print('Building Activity Indictors');
+    final loadModel = Provider.of<LoadModel>(context);
+    return loadModel.finished? Container(): const CupertinoActivityIndicator(radius: 15);
+  }
+}
+
+/// Keeps a Dart [List] in sync with an [AnimatedList].
+///
+/// The [insert] and [removeAt] methods apply to both the internal list and
+/// the animated list that belongs to [listKey].
+///
+/// This class only exposes as much of the Dart List API as is needed by the
+/// sample app. More list methods are easily added, however methods that
+/// mutate the list must make the same changes to the animated list in terms
+/// of [AnimatedListState.insertItem] and [AnimatedList.removeItem].
+class ListModel<E> {
+  ListModel({
+    @required this.listKey,
+    Iterable<int> initialItems,
+  }) : assert(listKey != null),
+        _items = initialItems.map((it) => CardItem(item: it)).toList();
+
+  final GlobalKey<AnimatedListState> listKey;
+  final List<CardItem> _items;
+
+  AnimatedListState get _animatedList => listKey.currentState;
+
+  void insert(int item) {
+    _items.add(CardItem(item: item));
+    _animatedList.insertItem(_items.length - 1, duration:const Duration(milliseconds: 1500));
+  }
+
+  int get length => _items.length;
+
+  CardItem operator [](int index) => _items[index];
+
+  int indexOf(CardItem item) => _items.indexOf(item);
+}
+
+/// Displays its integer item as 'item N' on a Card whose color is based on
+/// the item's value.
+///
+/// The text is displayed in bright green if [selected] is
+/// true. This widget's height is based on the [animation] parameter, it
+/// varies from 0 to 128 as the animation varies from 0.0 to 1.0.
+//class CardItem extends StatelessWidget {
+//  const CardItem({
+//    Key key,
+//    @required this.item
+//  }) : super(key: key);
+//
+//  final int item;
+//
+//  @override
+//  Widget build(BuildContext context) {
+//    print('[Build]:[Card$item}]');
+//    TextStyle textStyle = Theme.of(context).textTheme.display1;
+//    return Padding(
+//      padding: const EdgeInsets.all(2.0),
+//      child: SizedBox(
+//        height: 64.0,
+//        child: Card(
+//          color: Colors.primaries[item % Colors.primaries.length],
+//          child: Center(
+//            child: Text('Item $item', style: textStyle),
+//          ),
+//        ),
+//      ),
+//    );
+//  }
+//}
+class CardItem extends StatefulWidget {
+  const CardItem({
+    Key key,
+    @required this.item
+  }) : super(key: key);
+
+  final int item;
+
+  @override
+  _CardItemState createState() => _CardItemState();
+}
+
+class _CardItemState extends State<CardItem> with AutomaticKeepAliveClientMixin {
+  @override
+  Widget build(BuildContext context) {
+    print('[Build]:[Card${widget.item}}]');
+    TextStyle textStyle = Theme.of(context).textTheme.display1;
+    return Padding(
+      padding: const EdgeInsets.all(2.0),
+      child: SizedBox(
+        height: 64.0,
+        child: Card(
+          color: Colors.primaries[widget.item % Colors.primaries.length],
+          child: Center(
+            child: Text('Item ${widget.item}', style: textStyle),
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
+}
+
+void main() {
+  runApp(MyHome());
 }
