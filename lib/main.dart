@@ -40,8 +40,9 @@ class AnimatedListSample extends StatefulWidget {
 
 class _AnimatedListSampleState extends State<AnimatedListSample> {
   final myTween = Tween<Offset>(
-      begin: const Offset(1.5, 0),
-      end: Offset.zero);
+      begin: const Offset(0.5, 0),
+      end: Offset.zero
+  );
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   ListModel<int> _list;
   int _nextItem; // The next item inserted when the user presses the '+' button.
@@ -74,16 +75,23 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
   // Used to build list items that haven't been removed.
   Widget _buildItem(BuildContext context, int index, Animation<double> animation) {
 
-    final newAnimation = animation.drive(
-        CurveTween(curve: Curves.elasticOut)
-    );
-//    return SlideTransition(
-//      position: newAnimation.drive(myTween),
-//      child: _list[index]
-//    );
-    return FadeTransition(
-        opacity: animation,
-        child: _list[index]
+    if (index == _list.length) {
+      final activityTween = Tween<Offset>(
+          begin: const Offset(0, -0.5),
+          end: Offset.zero
+      );
+      return SlideTransition(
+        position: animation.drive(activityTween),
+        child: ActivityIndicatorContainter()
+      );
+    }
+
+    return SlideTransition(
+      position: animation.drive(myTween),
+      child: FadeTransition(
+          opacity: animation,
+          child: _list[index]
+      ),
     );
   }
 
@@ -111,7 +119,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
           padding: const EdgeInsets.all(16.0),
           child: AnimatedList(
             key: _listKey,
-            initialItemCount: _list.length,
+            initialItemCount: _list.length + 1,
             itemBuilder: _buildItem,
           ),
         ),
@@ -125,6 +133,23 @@ class MyActivityIndicator extends StatelessWidget{
     print('Building Activity Indictors');
     final loadModel = Provider.of<LoadModel>(context);
     return loadModel.finished? Container(): const CupertinoActivityIndicator(radius: 15);
+  }
+
+}
+
+class ActivityIndicatorContainter extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    print('Building Activity Container');
+    final loadModel = Provider.of<LoadModel>(context);
+    if (loadModel.finished) {
+      return Container();
+    } else {
+      return Container(
+        height: 128,
+        child: const Center(child: CupertinoActivityIndicator(radius: 15))
+      );
+    }
   }
 }
 
@@ -151,7 +176,12 @@ class ListModel<E> {
 
   void insert(int item) {
     _items.add(CardItem(item: item));
-    _animatedList.insertItem(_items.length - 1, duration:const Duration(milliseconds: 1500));
+//    print('!!${_items.length-1}');
+    _animatedList.removeItem(_items.length-1,(context, _, {duration: const Duration(seconds: 0)}) => Container());
+    _animatedList.insertItem(_items.length-1, duration:const Duration(milliseconds: 500));
+//    print('!!!!!${_items.length-1}');
+//    _animatedList.removeItem(_items.length,(context, _, {duration: const Duration(seconds: 0)}) => Container());
+    _animatedList.insertItem(_items.length, duration:const Duration(milliseconds: 500));
   }
 
   int get length => _items.length;

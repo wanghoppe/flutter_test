@@ -12,7 +12,7 @@ class StringCreator{
   final _controller = StreamController<String>();
 
   StringCreator(){
-    Timer.periodic(Duration(milliseconds: 500), (t){
+    Timer.periodic(Duration(milliseconds: 1000), (t){
       _controller.sink.add(_count.toString());
       _count ++;
       if (_count > 110){

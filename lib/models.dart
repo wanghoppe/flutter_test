@@ -5,11 +5,15 @@ class LoadModel extends ChangeNotifier{
   var finished = false;
 
   void finish(){
-    finished = true;
-    notifyListeners();
+    if (!finished){
+      finished = true;
+      notifyListeners();
+    }
   }
   void start(){
-    finished = false;
-    notifyListeners();
+    if (finished){
+      finished = false;
+      notifyListeners();
+    }
   }
 }
