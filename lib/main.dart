@@ -47,7 +47,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
   ListModel<int> _list;
   int _nextItem; // The next item inserted when the user presses the '+' button.
 
-  final aicontianer = ActivityIndicatorContainter();
+  final aicontianer = ActivityIndicatorContainer();
 
   @override
   void initState() {
@@ -90,7 +90,7 @@ class _AnimatedListSampleState extends State<AnimatedListSample> {
 
     return SizeTransition( // Todo: change
       sizeFactor: animation,
-      axisAlignment: -1.0,
+      axisAlignment: 1.0,
       child: SlideTransition(
         position: animation.drive(myTween),
         child: FadeTransition(
@@ -144,7 +144,7 @@ class MyOtherSliverList extends StatelessWidget{
     print('Build sencond SliverList');
     return SliverList(
       delegate: SliverChildListDelegate(  // Todo: change
-          [ActivityIndicatorContainter()]
+          [ActivityIndicatorContainer()]
 //          [AnimatedContainer(
 //            height: 200,
 //            color: Colors.green,
@@ -167,7 +167,7 @@ class MyActivityIndicator extends StatelessWidget{
 
 }
 
-class ActivityIndicatorContainter extends StatelessWidget{
+class ActivityIndicatorContainer extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     print('Building Activity Container');
